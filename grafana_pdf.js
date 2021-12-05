@@ -15,6 +15,7 @@ program
   .option('-p, --password <password>', 'Grafana password')
   .option('-t, --api-token <api-token>', 'Grafana API token')
   .option('-o, --output <pdf>', 'Output PDF')
+  .option('--hide-sidemenu', 'Hides the page sidemenu')
   .argument('[url]', 'Dashboard URL');
 
 program.parse(process.argv);
@@ -43,8 +44,8 @@ if (opts.apiToken) {
 }
 
 const dashboard_url = program.args.length > 0 ? program.args[0] : process.env.GF_URL;
-
 const output_pdf = opts.output || process.env.GF_OUTPUT;
+const hide_sidemenu = opts.hideSidemenu;
 
 // Set the browser width in pixels. The paper size will be calculated on the basus of 96dpi,
 // so 1200 corresponds to 12.5".
@@ -100,6 +101,15 @@ const width_px = 1200;
       let resizeHandles = document.getElementsByClassName('react-resizable-handle');
       for (el of resizeHandles) { el.hidden = true; };
     });
+
+    if (hide_sidemenu) {
+      await page.evaluate(() => {
+        let el = document.querySelector('sidemenu');
+        if (el) {
+          el.hidden = true;
+        }
+      });
+    }
 
     // Get the height of the main canvas, and add a margin
     var height_px = await page.evaluate(() => {
