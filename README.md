@@ -18,7 +18,6 @@ docker run \
     --password ncCsmnK213Ngvfd50uEv \
     --output /output/test.pdf \
     'http://grafana.example.com/d/e1LER1Pef/my-dashboard?orgId=1&from=1638556236100&to=1638566616683'
-
 ```
 
 Using environment variables:
