@@ -48,3 +48,5 @@ RUN npm ci
 RUN chmod -R o+rwx node_modules/puppeteer/.local-chromium
 
 COPY grafana_pdf.js .
+
+ENTRYPOINT ["node", "grafana_pdf.js"]

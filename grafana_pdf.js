@@ -8,15 +8,43 @@
  */
 
 const puppeteer = require('puppeteer');
+const { program } = require('commander');
 
-// URL to load should be passed as first parameter
-const url = process.argv[2];
-// Username and password (with colon separator) should be second parameter
-const auth_string = process.argv[3];
-// Output file name should be third parameter
-const outfile = process.argv[4];
+program
+  .option('-u, --user <user>', 'Grafana username')
+  .option('-p, --password <password>', 'Grafana password')
+  .option('-t, --api-token <api-token>', 'Grafana API token')
+  .option('-o, --output <pdf>', 'Output PDF')
+  .argument('[url]', 'Dashboard URL');
 
-// TODO: Output an error message if number of arguments is not right or arguments are invalid
+program.parse(process.argv);
+
+const opts = program.opts();
+
+// Build the auth header either from environment variables or CLI options,
+// giving preference to CLI.
+
+function basicAuthHeaderValue(user, pass) {
+  return 'Basic ' + new Buffer.from(`${user}:${pass}`).toString('base64');
+}
+
+let auth_header;
+
+if (process.env.GF_API_TOKEN) {
+  auth_header = 'Bearer ' + process.env.GF_API_TOKEN;
+} else if (process.env.GF_USERNAME) {
+  auth_header = basicAuthHeaderValue(process.env.GF_USERNAME, process.env.GF_PASSWORD);
+}
+
+if (opts.apiToken) {
+  auth_header = 'Bearer ' + process.env.GF_API_TOKEN;
+} else if (opts.user) {
+  auth_header = basicAuthHeaderValue(opts.user, opts.password);
+}
+
+const dashboard_url = program.args.length > 0 ? program.args[0] : process.env.GF_URL;
+
+const output_pdf = opts.output || process.env.GF_OUTPUT;
 
 // Set the browser width in pixels. The paper size will be calculated on the basus of 96dpi,
 // so 1200 corresponds to 12.5".
@@ -25,9 +53,6 @@ const width_px = 1200;
 // size here, since that would lead to a "mobile-sized" screen (816px), and mess up the rendering.
 // Instead, set e.g. double the size here (1632px), and call page.pdf() with format: 'Letter' and
 // scale = 0.5.
-
-// Generate authorization header for basic auth
-const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
 
 (async () => {
   try {
@@ -45,11 +70,13 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
     
     const page = await browser.newPage();
 
-    // Set basic auth headers
-    await page.setExtraHTTPHeaders({ 'Authorization': auth_header });
+    // Set auth headers
+    if (auth_header) {
+      await page.setExtraHTTPHeaders({ 'Authorization': auth_header });
+    }
 
     // Increase timeout from the default of 30 seconds to 120 seconds, to allow for slow-loading panels
-    await page.setDefaultNavigationTimeout(120000);
+    page.setDefaultNavigationTimeout(120000);
 
     // Increasing the deviceScaleFactor gets a higher-resolution image. The width should be set to
     // the same value as in page.pdf() below. The height is not important
@@ -63,7 +90,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
     // Wait until all network connections are closed (and none are opened withing 0.5s).
     // In some cases it may be appropriate to change this to {waitUntil: 'networkidle2'},
     // which stops when there are only 2 or fewer connections remaining.
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    await page.goto(dashboard_url, { waitUntil: 'networkidle0' });
 
     // Hide all panel description (top-left "i") pop-up handles and, all panel resize handles
     // Annoyingly, it seems you can't concatenate the two object collections into one
@@ -101,8 +128,6 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
 
             totalHeight += distance;
 
-            console.log('totalHeight', totalHeight)
-
             if (totalHeight >= scrollHeight) {
               clearInterval(timer);
               resolve();
@@ -115,8 +140,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
     await autoScroll(page);
     // == auto scroll to the bottom to solve long grafana dashboard end
 
-    await page.pdf({
-      path: outfile,
+    let pdf_opts = {
       width: width_px + 'px',
       height: height_px + 'px',
       //    format: 'Letter', <-- see note above for generating "paper-sized" outputs
@@ -128,8 +152,13 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         bottom: 0,
         left: 0,
       },
-    });
+    };
 
+    if (output_pdf) {
+      pdf_opts.path = output_pdf
+    }
+
+    await page.pdf(pdf_opts);
     await browser.close();
   } catch (error) {
     console.log(error);
