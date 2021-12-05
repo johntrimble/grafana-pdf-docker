@@ -13,7 +13,7 @@ docker run \
     --rm \
     --tty \
     --interactive \
-    ghcr.io/johntrimble/grafana-pdf-docker \
+    ghcr.io/johntrimble/grafana-pdf-docker:main \
     --user admin \
     --password ncCsmnK213Ngvfd50uEv \
     --output /output/test.pdf \
@@ -32,7 +32,7 @@ docker run \
     --rm \
     --tty \
     --interactive \
-    ghcr.io/johntrimble/grafana-pdf-docker
+    ghcr.io/johntrimble/grafana-pdf-docker:main
 ```
 
 From a Grafana instance running on the host (localhost:3000):
@@ -44,7 +44,7 @@ docker run \
     --rm \
     --tty \
     --interactive \
-    ghcr.io/johntrimble/grafana-pdf-docker \
+    ghcr.io/johntrimble/grafana-pdf-docker:main \
     --user admin \
     --password ncCsmnK213Ngvfd50uEv \
     --output /output/test.pdf \
@@ -59,7 +59,7 @@ docker run \
     --rm \
     --tty \
     --interactive \
-    ghcr.io/johntrimble/grafana-pdf-docker \
+    ghcr.io/johntrimble/grafana-pdf-docker:main \
     --api-token 1JZJLUqQBJNof5ZqWxdU \
     --output /output/test.pdf \
     'http://grafana.example.com/d/e1LER1Pef/my-dashboard?orgId=1&from=1638556236100&to=1638566616683'
