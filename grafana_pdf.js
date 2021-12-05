@@ -162,5 +162,6 @@ const width_px = 1200;
     await browser.close();
   } catch (error) {
     console.log(error);
+    process.exit(1);
   }
 })();
