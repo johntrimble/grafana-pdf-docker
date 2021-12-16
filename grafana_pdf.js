@@ -156,6 +156,7 @@ const width_px = 1200;
       //    format: 'Letter', <-- see note above for generating "paper-sized" outputs
       scale: 1,
       displayHeaderFooter: false,
+      printBackground: true,
       margin: {
         top: 0,
         right: 0,
